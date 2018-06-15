@@ -12,6 +12,7 @@ import CoreML
 
 class ViewController: UIViewController {
 
+    @IBOutlet weak var foundImage: UIImageView!
     @IBOutlet weak var canvasView: UIView!
     @IBOutlet weak var imagePreview: UIImageView!
     @IBOutlet weak var predictionLabel: UILabel!
@@ -66,6 +67,7 @@ class ViewController: UIViewController {
         image = UIImage(view: canvasView)
         imagePreview.image = image
         findText(image: image!)
+        self.foundImage.image = self.inputImageArray[0]
     
     }
     
@@ -84,13 +86,40 @@ class ViewController: UIViewController {
             context?.scaleBy(x: 1, y: -1)
             context?.draw(image.cgImage!, in: CGRect(origin: .zero, size: image.size))
             
+            
+            
             for result in results {
                 if let textObservation = result as? VNTextObservation {
                     guard let characterBoxes = textObservation.characterBoxes else { return }
                     for charBox in characterBoxes {
+                       // var auxRect = charBox.boundingBox
+                        
                         let rectBox = self.boundingBox(forRegionOfInterest: charBox.boundingBox, withinImageBounds: self.canvasView.bounds)
                         context?.stroke(rectBox, width: 4)
                         //inputImageArray.append(cropImage(image: image, cropRect: rectBox))
+                        self.inputImageArray.append(image.cropped(boundingBox: rectBox)!)
+                        //self.foundImage.image = self.inputImageArray[0]
+                        
+                        let boxY = (self.canvasView.frame.midY -  rectBox.minY) * 2  - rectBox.height
+                        
+                       
+                        let coloredView = UIView()
+                        
+                        coloredView.backgroundColor = .green
+                        
+                      /*  coloredView.frame = CGRect(x: rectBox.maxX - rectBox.width,
+                                                   y: self.canvasView.frame.minY + rectBox.minY,
+                                                   width: rectBox.width,
+                                                   height: rectBox.height)
+ */
+                        coloredView.frame = CGRect(x: rectBox.maxX - rectBox.width,
+                                                   y:  rectBox.minY,
+                                                   width: rectBox.width,
+                                                   height: rectBox.height)
+                        self.view.addSubview(coloredView)
+                        break
+                        
+                        
                     }
                 }
             }
@@ -181,6 +210,15 @@ extension UIImage {
         UIGraphicsEndImageContext()
         self.init(cgImage: image!.cgImage!)
     }
-
+    
+    func cropped(boundingBox: CGRect) -> UIImage? {
+        guard let cgImage = self.cgImage?.cropping(to: boundingBox) else {
+            return nil
+        }
+        
+        return UIImage(cgImage: cgImage)
+    }
+    
+    
 }
 
