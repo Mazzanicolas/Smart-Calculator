@@ -95,10 +95,14 @@ class ViewController: UIViewController {
                        // var auxRect = charBox.boundingBox
                         
                         let rectBox = self.boundingBox(forRegionOfInterest: charBox.boundingBox, withinImageBounds: self.canvasView.bounds)
+                        let asdfBox = CGRect(x: rectBox.minX,
+                                             y: self.canvasView.bounds.height - rectBox.maxY,
+                                             width: rectBox.width,
+                                             height: rectBox.height)
+                        
                         context?.stroke(rectBox, width: 4)
-                        //inputImageArray.append(cropImage(image: image, cropRect: rectBox))
-                        self.inputImageArray.append(image.cropped(boundingBox: rectBox)!)
-                        //self.foundImage.image = self.inputImageArray[0]
+                        let cropped = image.cropped(boundingBox: asdfBox)!
+                        self.inputImageArray.append(cropped)
                         
                         let boxY = (self.canvasView.frame.midY -  rectBox.minY) * 2  - rectBox.height
                         
@@ -112,10 +116,12 @@ class ViewController: UIViewController {
                                                    width: rectBox.width,
                                                    height: rectBox.height)
  */
-                        coloredView.frame = CGRect(x: rectBox.maxX - rectBox.width,
-                                                   y:  rectBox.minY,
-                                                   width: rectBox.width,
-                                                   height: rectBox.height)
+                        coloredView.frame = CGRect(x: rectBox.minX,
+                                                  y: self.canvasView.frame.minY + rectBox.height - rectBox.minY,
+                                                  width: rectBox.width,
+                                                  height: rectBox.height
+                                                  )
+                        
                         self.view.addSubview(coloredView)
                         break
                         
