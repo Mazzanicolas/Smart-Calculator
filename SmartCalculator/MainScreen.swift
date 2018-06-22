@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreGraphics
 import Vision
 import CoreML
 
@@ -50,7 +51,7 @@ class ViewController: UIViewController {
     func draw(){
         let strokeLayer         = CAShapeLayer()
         strokeLayer.fillColor   = nil
-        strokeLayer.strokeColor = UIColor.black.cgColor
+        strokeLayer.strokeColor = UIColor.white.cgColor
         strokeLayer.lineWidth   = 10
         strokeLayer.path        = path.cgPath
         canvasView.layer.addSublayer(strokeLayer)
@@ -64,11 +65,22 @@ class ViewController: UIViewController {
     }
     
     @IBAction func canvasToImage(_ sender: Any) {
+        inputImageArray = []
+        
         image = UIImage(view: canvasView)
         imagePreview.image = image
         findText(image: image!)
-        self.foundImage.image = self.inputImageArray[0]
-    
+        
+        let e347 = E347() //Referencia borrada por temas de espacio en el git
+        var text = ""
+        for image in inputImageArray {
+            let buffer = image.buffer()!
+            let prediction  = try! e347.prediction(image: buffer)
+            text = text + prediction.labels
+            print(prediction.labelsProbability)
+        }
+        predictionLabel.text = text
+        
     }
     
     func findText(image: UIImage) {
@@ -102,28 +114,11 @@ class ViewController: UIViewController {
                         
                         context?.stroke(rectBox, width: 4)
                         let cropped = image.cropped(boundingBox: asdfBox)!
-                        self.inputImageArray.append(cropped)
+                        let squareImage = self.drawInSquare(image: cropped)
+                        let convertedImage = self.resizeImage(image: squareImage)
+                        self.inputImageArray.append(convertedImage)
                         
-                        let boxY = (self.canvasView.frame.midY -  rectBox.minY) * 2  - rectBox.height
-                        
-                       
-                        let coloredView = UIView()
-                        
-                        coloredView.backgroundColor = .green
-                        
-                      /*  coloredView.frame = CGRect(x: rectBox.maxX - rectBox.width,
-                                                   y: self.canvasView.frame.minY + rectBox.minY,
-                                                   width: rectBox.width,
-                                                   height: rectBox.height)
- */
-                        coloredView.frame = CGRect(x: rectBox.minX,
-                                                  y: self.canvasView.frame.minY + rectBox.height - rectBox.minY,
-                                                  width: rectBox.width,
-                                                  height: rectBox.height
-                                                  )
-                        
-                        self.view.addSubview(coloredView)
-                        break
+        
                         
                         
                     }
@@ -206,6 +201,45 @@ class ViewController: UIViewController {
         return rect
     }
     
+    func resizeImage(image: UIImage) -> UIImage {
+        let size = image.size
+        
+        let widthRatio  = 224 / size.width
+        let heightRatio = 224 / size.height
+        
+        // Figure out what our orientation is, and use that to form the rectangle
+        var newSize: CGSize
+        if(widthRatio > heightRatio) {
+            newSize = CGSize(width: size.width * heightRatio, height: size.height * heightRatio)
+        } else {
+            newSize = CGSize(width: size.width * widthRatio,  height: size.height * widthRatio)
+        }
+        
+        // This is the rect that we've calculated out and this is what is actually used below
+        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+        
+        // Actually do the resizing to the rect using the ImageContext stuff
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: rect)
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage!
+    }
+    
+    func drawInSquare(image: UIImage) -> UIImage {
+        let side = max(image.size.width, image.size.height)
+        let size = CGSize(width: side, height: side)
+        UIGraphicsBeginImageContext(size)
+        let context = UIGraphicsGetCurrentContext()
+        context?.setFillColor(UIColor.black.cgColor)
+        context?.fill(CGRect(x: 0, y: 0, width: side, height: side))
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+        let image = context?.makeImage()
+        UIGraphicsEndImageContext()
+        return UIImage(cgImage: image!)
+    }
+    
 }
 
 extension UIImage {
@@ -223,6 +257,31 @@ extension UIImage {
         }
         
         return UIImage(cgImage: cgImage)
+    }
+    
+    func buffer() -> CVPixelBuffer? {
+        let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue, kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
+        var pixelBuffer : CVPixelBuffer?
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(self.size.width), Int(self.size.height), kCVPixelFormatType_32ARGB, attrs, &pixelBuffer)
+        guard (status == kCVReturnSuccess) else {
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(pixelBuffer!, CVPixelBufferLockFlags(rawValue: 0))
+        let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer!)
+        
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = CGContext(data: pixelData, width: Int(self.size.width), height: Int(self.size.height), bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: rgbColorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+        
+        context?.translateBy(x: 0, y: self.size.height)
+        context?.scaleBy(x: 1.0, y: -1.0)
+        
+        UIGraphicsPushContext(context!)
+        self.draw(in: CGRect(x: 0, y: 0, width: self.size.width, height: self.size.height))
+        UIGraphicsPopContext()
+        CVPixelBufferUnlockBaseAddress(pixelBuffer!, CVPixelBufferLockFlags(rawValue: 0))
+        
+        return pixelBuffer
     }
     
     
