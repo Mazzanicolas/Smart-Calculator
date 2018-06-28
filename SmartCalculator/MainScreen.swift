@@ -18,7 +18,9 @@ class ViewController: UIViewController {
     @IBOutlet weak var imagePreview: UIImageView!
     @IBOutlet weak var predictionLabel: UILabel!
     @IBOutlet weak var predictionImage: UIImageView!
+    var calculator = Calculator()
     var inputImageArray: [UIImage] = []
+    var operationValues: [String] = []
     var path       = UIBezierPath()
     var startPoint = CGPoint()
     var touchPoint = CGPoint()
@@ -52,7 +54,7 @@ class ViewController: UIViewController {
         let strokeLayer         = CAShapeLayer()
         strokeLayer.fillColor   = nil
         strokeLayer.strokeColor = UIColor.white.cgColor
-        strokeLayer.lineWidth   = 10
+        strokeLayer.lineWidth   = 5
         strokeLayer.path        = path.cgPath
         canvasView.layer.addSublayer(strokeLayer)
         canvasView.setNeedsDisplay()
@@ -75,11 +77,14 @@ class ViewController: UIViewController {
         var text = ""
         for image in inputImageArray {
             let buffer = image.buffer()!
+            let type = CVPixelBufferGetPixelFormatType(buffer)
             let prediction  = try! e347.prediction(image: buffer)
-            text = text + prediction.labels
-            print(prediction.labelsProbability)
+            text = text + String(prediction.classLabel)
+            operationValues.append(String(prediction.classLabel))
         }
-        predictionLabel.text = text
+        let result = calculator.evaluate(operation: operationValues)
+        predictionLabel.text = text + " = " + String(result)
+        operationValues = []
         
     }
     
@@ -204,8 +209,8 @@ class ViewController: UIViewController {
     func resizeImage(image: UIImage) -> UIImage {
         let size = image.size
         
-        let widthRatio  = 224 / size.width
-        let heightRatio = 224 / size.height
+        let widthRatio  = 28 / size.width
+        let heightRatio = 28 / size.height
         
         // Figure out what our orientation is, and use that to form the rectangle
         var newSize: CGSize
@@ -262,7 +267,7 @@ extension UIImage {
     func buffer() -> CVPixelBuffer? {
         let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue, kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
         var pixelBuffer : CVPixelBuffer?
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(self.size.width), Int(self.size.height), kCVPixelFormatType_32ARGB, attrs, &pixelBuffer)
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(self.size.width), Int(self.size.height), kCVPixelFormatType_OneComponent8, attrs, &pixelBuffer)
         guard (status == kCVReturnSuccess) else {
             return nil
         }
@@ -270,8 +275,7 @@ extension UIImage {
         CVPixelBufferLockBaseAddress(pixelBuffer!, CVPixelBufferLockFlags(rawValue: 0))
         let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer!)
         
-        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-        let context = CGContext(data: pixelData, width: Int(self.size.width), height: Int(self.size.height), bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: rgbColorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+        let context = CGContext(data: pixelData, width: Int(self.size.width), height: Int(self.size.height), bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
         
         context?.translateBy(x: 0, y: self.size.height)
         context?.scaleBy(x: 1.0, y: -1.0)

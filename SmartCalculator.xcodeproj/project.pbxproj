@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8D0D64E620E464E6005EFF02 /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0D64E520E464E6005EFF02 /* Calculator.swift */; };
+		8D0D64EA20E47049005EFF02 /* E347.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 8D0D64E920E47049005EFF02 /* E347.mlmodel */; };
 		90E2A15020BF772000B9147E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90E2A14F20BF772000B9147E /* AppDelegate.swift */; };
 		90E2A15220BF772000B9147E /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90E2A15120BF772000B9147E /* MainScreen.swift */; };
 		90E2A15520BF772000B9147E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 90E2A15320BF772000B9147E /* Main.storyboard */; };
@@ -15,6 +17,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8D0D64E520E464E6005EFF02 /* Calculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
+		8D0D64E920E47049005EFF02 /* E347.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = E347.mlmodel; sourceTree = "<group>"; };
 		90E2A14C20BF772000B9147E /* SmartCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90E2A14F20BF772000B9147E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		90E2A15120BF772000B9147E /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
@@ -57,9 +61,11 @@
 				90E2A14F20BF772000B9147E /* AppDelegate.swift */,
 				90E2A15120BF772000B9147E /* MainScreen.swift */,
 				90E2A15320BF772000B9147E /* Main.storyboard */,
+				8D0D64E920E47049005EFF02 /* E347.mlmodel */,
 				90E2A15620BF772000B9147E /* Assets.xcassets */,
 				90E2A15820BF772000B9147E /* LaunchScreen.storyboard */,
 				90E2A15B20BF772000B9147E /* Info.plist */,
+				8D0D64E520E464E6005EFF02 /* Calculator.swift */,
 			);
 			path = SmartCalculator;
 			sourceTree = "<group>";
@@ -136,7 +142,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D0D64E620E464E6005EFF02 /* Calculator.swift in Sources */,
 				90E2A15220BF772000B9147E /* MainScreen.swift in Sources */,
+				8D0D64EA20E47049005EFF02 /* E347.mlmodel in Sources */,
 				90E2A15020BF772000B9147E /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
