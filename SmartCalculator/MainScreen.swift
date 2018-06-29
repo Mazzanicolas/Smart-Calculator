@@ -13,23 +13,36 @@ import CoreML
 
 class ViewController: UIViewController {
 
-    @IBOutlet weak var foundImage: UIImageView!
+    @IBOutlet weak var outputTextView: UITextView!
     @IBOutlet weak var canvasView: UIView!
-    @IBOutlet weak var imagePreview: UIImageView!
     @IBOutlet weak var predictionLabel: UILabel!
     @IBOutlet weak var predictionImage: UIImageView!
+    
     var calculator = Calculator()
     var inputImageArray: [UIImage] = []
     var operationValues: [String] = []
+    var rhsArray: [String] = []
+    var lhsArray: [String] = []
+    var rhsNumber: Int = 0
+    var lhsNumber: Int = 0
     var path       = UIBezierPath()
     var startPoint = CGPoint()
     var touchPoint = CGPoint()
     var image : UIImage?
     
+    let alert = UIAlertController(title: "CoreML Error", message: "Los numeros detectados rompieron CoreML \n😡", preferredStyle: .alert)
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         canvasView.clipsToBounds          = true
         canvasView.isMultipleTouchEnabled = false
+        canvasView.layer.borderWidth = 2
+        canvasView.layer.borderColor = UIColor.blue.cgColor
+        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Perdon Sr.CoreML, no voy a dibujar eso otra vez", comment: "Default action"), style: .default, handler: { _ in
+            NSLog("The \"OK\" alert occured.")
+        }))
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -66,26 +79,117 @@ class ViewController: UIViewController {
         canvasView.setNeedsDisplay()
     }
     
-    @IBAction func canvasToImage(_ sender: Any) {
+    @IBAction func addition(_ sender: Any) {
+            calculate(operation: "+")
+    }
+
+    @IBAction func substraction(_ sender: Any) {
+            calculate(operation: "-")
+    }
+    
+    @IBAction func division(_ sender: Any) {
+        calculate(operation: "/")
+    }
+    
+    @IBAction func multiplication(_ sender: Any) {
+        calculate(operation: "*")
+    }
+    
+    
+    @IBAction func cleanAll(_ sender: Any) {
+    
         inputImageArray = []
-        
-        image = UIImage(view: canvasView)
-        imagePreview.image = image
-        findText(image: image!)
-        
-        let e347 = E347() //Referencia borrada por temas de espacio en el git
-        var text = ""
-        for image in inputImageArray {
-            let buffer = image.buffer()!
-            let type = CVPixelBufferGetPixelFormatType(buffer)
-            let prediction  = try! e347.prediction(image: buffer)
-            text = text + String(prediction.classLabel)
-            operationValues.append(String(prediction.classLabel))
-        }
-        let result = calculator.evaluate(operation: operationValues)
-        predictionLabel.text = text + " = " + String(result)
         operationValues = []
+        rhsArray = []
+        lhsArray = []
+        rhsNumber = 0
+        lhsNumber = 0
+        path      = UIBezierPath()
+        startPoint = CGPoint()
+        touchPoint = CGPoint()
+        image = UIImage()
+        predictionLabel.text = "Prediction"
+        outputTextView.text = ""
+        predictionImage.image = UIImage()
+    
+    
+    }
+    
+    override var preferredStatusBarStyle : UIStatusBarStyle {
+        return UIStatusBarStyle.lightContent
+        //return UIStatusBarStyle.default   // Make dark again
+    }
+    
+    func calculate(operation: String) {
+        findNumbers()
+        if rhsArray.isEmpty {
+            rhsNumber = arrayToNumber(arrayNumber: operationValues)
+            outputTextView.text = String(rhsNumber)
+            rhsArray = operationValues
+            operationValues = []
+            return
+        }
+        lhsNumber = arrayToNumber(arrayNumber: operationValues)
+        var result = 0
+        switch operation {
+        case "+":
+            result = calculator.addition(rhs:rhsNumber, lhs:lhsNumber)
+        case "-":
+            result = calculator.substraction(rhs:rhsNumber, lhs:lhsNumber)
+        case "/":
+            result = calculator.division(rhs:rhsNumber, lhs:lhsNumber)
+        case "*":
+            result = calculator.multiplication(rhs:rhsNumber, lhs:lhsNumber)
+        default:
+            result = -1
+        }
+        rhsNumber = result
+        operationValues = []
+        var text = outputTextView.text
+        text?.append("\n")
+        text?.append(String(result))
+        outputTextView.text = text
         
+    }
+    
+    func arrayToNumber(arrayNumber: Array<String>) -> Int{
+        
+        var result = ""
+        for number in arrayNumber {
+            result.append(number)
+        }
+        if result == "" { //guard
+            self.present(alert, animated: true, completion: nil)
+            return 0
+        }
+        return Int(result)!
+    }
+    
+    @IBAction func canvasToImage(_ sender: Any) {
+    }
+    func findNumbers(){
+        inputImageArray = []
+        image = UIImage(view: canvasView)
+        findText(image: image!)
+        let e347 = E347()
+        var text = ""
+        do {
+            for image in inputImageArray {
+                let buffer = image.buffer()!
+                let type = CVPixelBufferGetPixelFormatType(buffer)
+                let prediction  = try e347.prediction(image: buffer)
+                text = text + String(prediction.classLabel)
+                operationValues.append(String(prediction.classLabel))
+            }
+            predictionLabel.text = "Prediction: "+text
+            
+        } catch {
+            let alert = UIAlertController(title: "Error", message: "No se detectaron numeros", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Reintentar", comment: "Default action"), style: .default, handler: { _ in
+                NSLog("The \"OK\" alert occured.")
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
     }
     
     func findText(image: UIImage) {
@@ -122,9 +226,7 @@ class ViewController: UIViewController {
                         let squareImage = self.drawInSquare(image: cropped)
                         let convertedImage = self.resizeImage(image: squareImage)
                         self.inputImageArray.append(convertedImage)
-                        
-        
-                        
+
                         
                     }
                 }
@@ -247,7 +349,7 @@ class ViewController: UIViewController {
     
 }
 
-extension UIImage {
+extension UIImage { // mover a otra clase
     convenience init(view: UIView) {
         UIGraphicsBeginImageContext(view.frame.size)
         view.layer.render(in:UIGraphicsGetCurrentContext()!)

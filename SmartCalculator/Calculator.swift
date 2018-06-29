@@ -22,7 +22,17 @@ class Calculator {
     func addition(rhs: Int, lhs: Int) -> Int {
         return rhs+lhs
     }
+    
     func substraction(rhs: Int, lhs: Int) -> Int {
-        return rhs+lhs
+        return rhs-lhs
+    }
+    
+    func multiplication(rhs: Int, lhs: Int) -> Int {
+        return rhs*lhs
+    }
+    
+    func division(rhs: Int, lhs: Int) -> Int {
+        if lhs == 0 {return 0}
+        return rhs/lhs
     }
 }
